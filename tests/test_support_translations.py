@@ -129,6 +129,15 @@ def test_dunpgettext(translations):
     assert_equal_type_too('VohsCTXD1', translations.dunpgettext('messages1', 'foo', 'foo1', 'foos1', 2))
 
 
+
+def test_ldgettext_and_ldngettext_encode(translations):
+    with pytest.deprecated_call():
+        assert_equal_type_too(b'VohD', translations.ldgettext('messages1', 'foo'))
+    with pytest.deprecated_call():
+        assert_equal_type_too(b'VohsD1', translations.ldngettext('messages1', 'foo1', 'foos1', 2))
+    with pytest.deprecated_call():
+        assert_equal_type_too(b'bar', translations.ldgettext('messages1', 'bar'))
+
 def test_load(translations):
     tempdir = tempfile.mkdtemp()
     try:

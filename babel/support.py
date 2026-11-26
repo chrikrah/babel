@@ -425,6 +425,13 @@ class LazyProxy:
         )
 
 
+def _encode_for_output(translations: gettext.NullTranslations, message: str) -> str | bytes:
+    # Python 3.11 removed lgettext() and lngettext(), which ldgettext() and
+    # ldngettext() used to call, so encode here as lpgettext() does.
+    encoding = getattr(translations, "_output_charset", None) or locale.getpreferredencoding()
+    return message.encode(encoding) if isinstance(message, str) else message
+
+
 class NullTranslations(gettext.NullTranslations):
     if TYPE_CHECKING:
         _info: dict[str, str]
@@ -455,7 +462,7 @@ class NullTranslations(gettext.NullTranslations):
         """
         return self._domains.get(domain, self).gettext(message)
 
-    def ldgettext(self, domain: str, message: str) -> str:
+    def ldgettext(self, domain: str, message: str) -> str | bytes:
         """Like ``lgettext()``, but look the message up in the specified
         domain.
         """
@@ -466,7 +473,8 @@ class NullTranslations(gettext.NullTranslations):
             DeprecationWarning,
             stacklevel=2,
         )
-        return self._domains.get(domain, self).lgettext(message)
+        translations = self._domains.get(domain, self)
+        return _encode_for_output(translations, translations.gettext(message))
 
     def udgettext(self, domain: str, message: str) -> str:
         """Like ``ugettext()``, but look the message up in the specified
@@ -483,7 +491,7 @@ class NullTranslations(gettext.NullTranslations):
         """
         return self._domains.get(domain, self).ngettext(singular, plural, num)
 
-    def ldngettext(self, domain: str, singular: str, plural: str, num: int) -> str:
+    def ldngettext(self, domain: str, singular: str, plural: str, num: int) -> str | bytes:
         """Like ``lngettext()``, but look the message up in the specified
         domain.
         """
@@ -494,7 +502,10 @@ class NullTranslations(gettext.NullTranslations):
             DeprecationWarning,
             stacklevel=2,
         )
-        return self._domains.get(domain, self).lngettext(singular, plural, num)
+        translations = self._domains.get(domain, self)
+        return _encode_for_output(
+            translations, translations.ngettext(singular, plural, num),
+        )
 
     def udngettext(self, domain: str, singular: str, plural: str, num: int) -> str:
         """Like ``ungettext()`` but look the message up in the specified
